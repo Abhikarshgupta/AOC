@@ -26,7 +26,7 @@
  */
 
 const fs = require("fs");
-fs.readFile("testInputDay7.txt", "utf-8", function (err, data) {
+fs.readFile("inputDay7.txt", "utf-8", function (err, data) {
 	if (err) {
 		console.log(err);
 	}
@@ -51,28 +51,27 @@ fs.readFile("testInputDay7.txt", "utf-8", function (err, data) {
 					} else if (words[2] === "/") {
 						activeDirectory = "/";
 					} else {
-						activeDirectory = String(words[2]);
+						activeDirectory = activeDirectory + "/" + String(words[2]);
 					}
 				}
 			} else if (words[0] === "dir") {
 				fileDirectory.items.push({
 					type: "folder",
 					size: 0,
-					name: words[1],
+					name: activeDirectory + "/" + words[1],
 					parent: activeDirectory,
 				});
 				if (activeDirectory !== "/") {
 					const parentFolder = fileDirectory.items.find(
 						(item) => item.name === activeDirectory
 					);
-					// console.log({ parentFolder });
 					if (!parentFolder["children"]) {
-						parentFolder["children"] = [words[1]];
+						parentFolder["children"] = [activeDirectory + "/" + words[1]];
 					} else {
-						parentFolder["children"].push(words[1]);
+						parentFolder["children"].push(activeDirectory + "/" + words[1]);
 					}
 				}
-				folderMap.set(words[1], 0);
+				folderMap.set(activeDirectory + "/" + words[1], 0);
 			} else {
 				fileDirectory.items.push({
 					type: "file",
@@ -80,10 +79,21 @@ fs.readFile("testInputDay7.txt", "utf-8", function (err, data) {
 					name: words[1],
 					parent: activeDirectory,
 				});
-				folderMap.set(
-					activeDirectory,
-					folderMap.get(activeDirectory) + Number(words[0])
-				);
+
+				if (!folderMap.get(activeDirectory)) {
+					const folderDetails = fileDirectory.items.find(
+						(item) => item.type === "folder" && item.name === activeDirectory
+					);
+					folderMap.set(
+						folderDetails?.parent + "/" + activeDirectory,
+						Number(words[0])
+					);
+				} else {
+					folderMap.set(
+						activeDirectory,
+						folderMap.get(activeDirectory) + Number(words[0])
+					);
+				}
 			}
 		}
 	};
@@ -96,16 +106,18 @@ fs.readFile("testInputDay7.txt", "utf-8", function (err, data) {
 	for (const [key, value] of folderMap.entries()) {
 		totalSum += value <= 100000 && value;
 	}
+	console.log({ folderMap });
+	console.log(fileDirectory.items);
 	// traverse the folders, and if the children folders' sum <= limit, add them too.
 	fileDirectory.items.forEach((item) => {
 		if (item.type === "folder") {
 			if (item.children?.length > 0) {
 				let currSum = 0;
-				console.log({ item });
+				// console.log({ item });
 				item.children.forEach((childFolder) => {
 					currSum += folderMap.get(childFolder);
 				});
-				console.log({ currSum });
+				// console.log({ currSum });
 				if (currSum + folderMap.get(item.name) <= 100000) totalSum += currSum;
 			}
 		}
